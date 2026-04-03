@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digital Award Certificate - Original Image Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700;900&family=Fira+Code:wght@400;500&display=swap');
         
@@ -48,17 +47,6 @@
             pointer-events: none;
             font-family: 'Noto Serif JP', serif;
             color: #000;
-        }
-
-        /* QRコードの配置（名前の右隣スペース） */
-        .qr-area {
-            position: absolute;
-            top: 42%; 
-            right: 28%; /* 画像内の空きスペースに合わせる */
-            background: white;
-            padding: 4px;
-            border: 1px solid #ddd;
-            pointer-events: auto;
         }
 
         /* 2. エディタスタイル（ダークモード） */
@@ -104,13 +92,6 @@
         @keyframes blink { 50% { opacity: 0; } }
 
         #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
-        
-        #overlay-btn {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100;
-            background: #d4af37; color: #fff; padding: 12px 40px;
-            border-radius: 50px; cursor: pointer; font-weight: bold;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
     </style>
 </head>
 <body>
@@ -120,8 +101,7 @@
     <!-- STEP 1: オリジナル画像ベースの賞状 -->
     <div id="classic-award">
         <div class="overlay-text">
-            <!-- QRコードのみを画像の上に配置 -->
-            <div class="qr-area" id="qrcode"></div>
+            <!-- 演出は読み込み後に自動開始 -->
         </div>
     </div>
 
@@ -149,28 +129,23 @@
         <p class="text-gray-400 mt-8 text-xl">二級整備士試験合格を心よりお祝い申し上げます</p>
     </div>
 
-    <!-- 演出開始ボタン -->
-    <div id="overlay-btn" onclick="startFlow()">演出をプレビュー</div>
-
     <script>
-        // QRコード生成（読み取ると今のページが開く）
-        new QRCode(document.getElementById("qrcode"), {
-            text: window.location.href,
-            width: 80,
-            height: 80
-        });
-
         // 背景
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.onresize = resize; resize();
 
+        // ページ読み込み完了時に演出を自動開始
+        window.onload = () => {
+            // ユーザーがページを認識できるよう、1秒後に開始
+            setTimeout(startFlow, 1000);
+        };
+
         function startFlow() {
-            document.getElementById('overlay-btn').style.display = 'none';
             const award = document.getElementById('classic-award');
             
-            // 1. 浮き上がる演出（タイミング完璧維持）
+            // 1. 浮き上がる演出
             award.classList.add('float-up');
 
             // 2. 2秒後にソースコード表示へ遷移
