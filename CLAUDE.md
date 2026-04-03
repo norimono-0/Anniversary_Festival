@@ -1,10 +1,6 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Overview
 
-静的な単一ページのお祝い演出サイト。二級整備士試験合格を祝うアニメーション付き賞状ページ。
+静的な単一ページのお祝い演出サイト。祝うアニメーション付き賞状ページ。
 スマホでQRコードを読み取ることで演出が発動する想定。
 
 ## Development
@@ -19,7 +15,7 @@ python3 -m http.server 8080
 
 ## Architecture
 
-ファイル構成: `index.html` + `image.png`
+ファイル構成: `index.html` + `image.png` + `qr.html`（QRコード表示ページ）
 
 **3段階のアニメーションシーケンス（自動再生）:**
 
@@ -47,4 +43,4 @@ python3 -m http.server 8080
 
 1. `main` ブランチへ push
 2. GitHub リポジトリ（`norimono-0/Anniversary_Festival`）の Settings → Pages → Branch: `main` / root を設定
-3. 外部のQRコード生成サービスで公開URLのQRコードを作成・印刷
+3. `qr.html` にアクセスして QR コードを取得・印刷
