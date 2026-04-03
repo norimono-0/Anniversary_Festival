@@ -36,7 +36,7 @@
 
         /* 浮き上がりアニメーション（タイミング維持） */
         .float-up {
-            transform: scale(1.08) translateY(-30px);
+            transform: scale(1.08) translateY(-2.5vh);
             box-shadow: 0 50px 100px rgba(0,0,0,0.8);
         }
 
@@ -61,6 +61,8 @@
             max-width: 900px;
             background: #0d1117;
             display: none;
+            max-height: 90vh;
+            overflow: hidden;
         }
 
         /* 3. 最終画面（おめでとう） */
@@ -78,10 +80,40 @@
         }
 
         .congrats-title {
-            font-size: 6rem;
+            font-size: clamp(2.2rem, 10vw, 6rem);
             font-weight: 900;
             color: #d4af37;
             text-shadow: 0 0 30px rgba(212, 175, 55, 0.6);
+            text-align: center;
+            padding: 0 1rem;
+        }
+
+        #back-btn {
+            margin-top: 3rem;
+            padding: 0.75rem 2.5rem;
+            border: 1px solid #d4af37;
+            color: #d4af37;
+            background: transparent;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 4px;
+        }
+        #back-btn:hover { background: rgba(212, 175, 55, 0.15); }
+        #back-btn:active { background: rgba(212, 175, 55, 0.25); }
+
+        @media (max-width: 480px) {
+            #back-btn {
+                margin-top: 2rem;
+                padding: 0.65rem 1.5rem;
+                font-size: 0.8rem;
+            }
+            #final-screen p {
+                text-align: center;
+                padding: 0 1rem;
+            }
         }
 
         .cursor {
@@ -116,17 +148,18 @@
             <div class="text-xs text-gray-400">verification.js</div>
             <div></div>
         </div>
-        <div class="p-6 text-sm md:text-base h-[450px] overflow-y-auto text-[#c9d1d9] bg-[#0d1117]">
+        <div class="p-4 sm:p-6 text-sm md:text-base h-[55vh] sm:h-[450px] overflow-y-auto text-[#c9d1d9] bg-[#0d1117]">
             <div id="code-display" class="whitespace-pre-wrap"></div><span id="cursor" class="cursor"></span>
         </div>
     </div>
 
     <!-- STEP 3: 最終画面 -->
     <div id="final-screen">
-        <div class="text-xl mb-4" style="color:#d4af37">SYSTEM EXECUTION SUCCESS</div>
-        <h2 class="text-white text-4xl mb-6">笹川 太郎 殿</h2>
+        <div class="text-sm sm:text-xl mb-4" style="color:#d4af37">SYSTEM EXECUTION SUCCESS</div>
+        <h2 class="text-white text-2xl sm:text-4xl mb-6">笹川 太郎 殿</h2>
         <h1 class="congrats-title">おめでとう！</h1>
-        <p class="text-gray-400 mt-8 text-xl">二級整備士試験合格を心よりお祝い申し上げます</p>
+        <p class="text-gray-400 mt-8 text-sm sm:text-xl">二級整備士試験合格を心よりお祝い申し上げます</p>
+        <button id="back-btn" onclick="resetToStart()">← RESTART</button>
     </div>
 
     <script>
@@ -225,7 +258,10 @@ processAward().then(res => launchUI(res));`;
             }, 500);
         }
 
+        let sparkleActive = false;
+
         function startSparkles() {
+            sparkleActive = true;
             let dots = [];
             for(let i=0; i<100; i++) {
                 dots.push({
@@ -237,6 +273,7 @@ processAward().then(res => launchUI(res));`;
                 });
             }
             function draw() {
+                if (!sparkleActive) { ctx.clearRect(0,0,canvas.width, canvas.height); return; }
                 ctx.clearRect(0,0,canvas.width, canvas.height);
                 dots.forEach(d => {
                     d.y -= d.s;
@@ -249,6 +286,37 @@ processAward().then(res => launchUI(res));`;
                 requestAnimationFrame(draw);
             }
             draw();
+        }
+
+        function resetToStart() {
+            sparkleActive = false;
+
+            const final = document.getElementById('final-screen');
+            const award = document.getElementById('classic-award');
+            const editor = document.getElementById('editor-container');
+            const disp = document.getElementById('code-display');
+
+            // 最終画面をフェードアウト
+            final.style.opacity = '0';
+            setTimeout(() => {
+                final.style.display = 'none';
+
+                // エディタをリセット
+                disp.innerText = '';
+                idx = 0;
+                editor.style.opacity = '0';
+                editor.style.transform = 'scale(0.9)';
+                editor.style.display = 'none';
+
+                // 賞状を初期状態に戻して表示
+                award.style.display = '';
+                award.style.opacity = '1';
+                award.style.transform = '';
+                award.classList.remove('float-up');
+
+                // 少し間を置いて演出を再スタート
+                setTimeout(startFlow, 800);
+            }, 700);
         }
     </script>
 </body>
