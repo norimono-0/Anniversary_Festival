@@ -62,7 +62,6 @@
             background: #0d1117;
             display: none;
             max-height: 90vh;
-            overflow: hidden;
         }
 
         /* 3. 最終画面（おめでとう） */
@@ -148,7 +147,7 @@
             <div class="text-xs text-gray-400">verification.js</div>
             <div></div>
         </div>
-        <div class="p-4 sm:p-6 text-sm md:text-base h-[55vh] sm:h-[450px] overflow-y-auto text-[#c9d1d9] bg-[#0d1117]">
+        <div id="code-scroll" class="p-4 sm:p-6 text-sm md:text-base h-[55vh] sm:h-[450px] overflow-y-auto text-[#c9d1d9] bg-[#0d1117]">
             <div id="code-display" class="whitespace-pre-wrap"></div><span id="cursor" class="cursor"></span>
         </div>
     </div>
@@ -235,7 +234,7 @@ processAward().then(res => launchUI(res));`;
                 disp.innerText += code[idx];
                 idx++;
                 setTimeout(typeCode, 15);
-                disp.scrollTop = disp.scrollHeight;
+                document.getElementById('cursor').scrollIntoView({ block: 'nearest' });
             } else {
                 setTimeout(showFinal, 1000);
             }
