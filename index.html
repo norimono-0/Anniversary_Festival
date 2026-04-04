@@ -64,6 +64,11 @@
             max-height: 90vh;
         }
 
+        #code-scroll {
+            -webkit-overflow-scrolling: touch;
+            overflow-y: scroll;
+        }
+
         /* 3. 最終画面（おめでとう） */
         #final-screen {
             position: fixed;
@@ -234,7 +239,8 @@ processAward().then(res => launchUI(res));`;
                 disp.innerText += code[idx];
                 idx++;
                 setTimeout(typeCode, 15);
-                document.getElementById('cursor').scrollIntoView({ block: 'nearest' });
+                const scroll = document.getElementById('code-scroll');
+                scroll.scrollTop = scroll.scrollHeight;
             } else {
                 setTimeout(showFinal, 1000);
             }
