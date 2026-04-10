@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Award Certificate - Original Image Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700;900&family=Fira+Code:wght@400;500&display=swap');
+        
+        body {
+            background-color: #1a1a1a;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 1. 賞状スタイル（画像を背景としてそのまま利用） */
+        #classic-award {
+            /* 画像をそのまま背景として使用。一切の変更を加えません */
+            background-image: url('image.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            
+            width: 90vw;
+            max-width: 900px;
+            aspect-ratio: 1.414 / 1;
+            position: relative;
+            z-index: 20;
+            transition: all 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* 浮き上がりアニメーション（タイミング維持） */
+        .float-up {
+            transform: scale(1.08) translateY(-2.5vh);
+            box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+        }
+
+        /* 画像上の文字配置レイヤー */
+        .overlay-text {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            font-family: 'Noto Serif JP', serif;
+            color: #000;
+        }
+
+        /* 2. エディタスタイル（ダークモード） */
+        #editor-container {
+            position: fixed;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.5s ease;
+            font-family: 'Fira Code', monospace;
+            z-index: 30;
+            width: 95%;
+            max-width: 900px;
+            background: #0d1117;
+            display: none;
+            max-height: 90vh;
+        }
+
+        #code-scroll {
+            -webkit-overflow-scrolling: touch;
+            overflow-y: scroll;
+        }
+
+        /* 3. 最終画面（おめでとう） */
+        #final-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #222 0%, #000 100%);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .congrats-title {
+            font-size: clamp(2.2rem, 10vw, 6rem);
+            font-weight: 900;
+            color: #d4af37;
+            text-shadow: 0 0 30px rgba(212, 175, 55, 0.6);
+            text-align: center;
+            padding: 0 1rem;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0;
+        }
+
+        #back-btn {
+            margin-top: 3rem;
+            padding: 0.75rem 2.5rem;
+            border: 1px solid #d4af37;
+            color: #d4af37;
+            background: transparent;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 4px;
+        }
+        #back-btn:hover { background: rgba(212, 175, 55, 0.15); }
+        #back-btn:active { background: rgba(212, 175, 55, 0.25); }
+
+        @media (max-width: 480px) {
+            #back-btn {
+                margin-top: 2rem;
+                padding: 0.65rem 1.5rem;
+                font-size: 0.8rem;
+            }
+            #final-screen p {
+                text-align: center;
+                padding: 0 1rem;
+            }
+        }
+
+        .cursor {
+            display: inline-block; width: 10px; height: 1.2em;
+            background-color: #58a6ff; animation: blink 1s step-end infinite;
+            vertical-align: middle;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- STEP 1: オリジナル画像ベースの賞状 -->
+    <div id="classic-award">
+        <div class="overlay-text">
+            <!-- 演出は読み込み後に自動開始 -->
+        </div>
+    </div>
+
+    <!-- STEP 2: エディタ -->
+    <div id="editor-container" class="rounded-xl border border-gray-700 shadow-2xl">
+        <div class="bg-[#21262d] px-4 py-2 flex items-center justify-between">
+            <div class="flex space-x-2">
+                <div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+                <div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+                <div class="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+            </div>
+            <div class="text-xs text-gray-400">verification.js</div>
+            <div></div>
+        </div>
+        <div id="code-scroll" class="p-4 sm:p-6 text-sm md:text-base h-[55vh] sm:h-[450px] overflow-y-auto text-[#c9d1d9] bg-[#0d1117]">
+            <div id="code-display" class="whitespace-pre-wrap"></div><span id="cursor" class="cursor"></span>
+        </div>
+    </div>
+
+    <!-- STEP 3: 最終画面 -->
+    <div id="final-screen">
+        <div class="text-sm sm:text-xl mb-4" style="color:#d4af37">SYSTEM EXECUTION SUCCESS</div>
+        <h2 class="text-white text-2xl sm:text-4xl mb-6">笹川 太郎 殿</h2>
+        <h1 class="congrats-title">おめでとう！</h1>
+        <p class="text-gray-400 mt-8 text-sm sm:text-xl">二級整備士試験合格を心よりお祝い申し上げます</p>
+        <button id="back-btn" onclick="resetToStart()">← RESTART</button>
+    </div>
+
+    <script>
+        // 背景
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.onresize = resize; resize();
+
+        // ページ読み込み完了時に演出を自動開始
+        window.onload = () => {
+            // ユーザーがページを認識できるよう、1秒後に開始
+            setTimeout(startFlow, 1000);
+        };
+
+        function startFlow() {
+            const award = document.getElementById('classic-award');
+            
+            // 1. 浮き上がる演出
+            award.classList.add('float-up');
+
+            // 2. 2秒後にソースコード表示へ遷移
+            setTimeout(() => {
+                award.style.opacity = '0';
+                award.style.transform = 'scale(1.5) rotateY(25deg)';
+                
+                setTimeout(() => {
+                    award.style.display = 'none';
+                    const editor = document.getElementById('editor-container');
+                    editor.style.display = 'block';
+                    setTimeout(() => {
+                        editor.style.opacity = '1';
+                        editor.style.transform = 'scale(1)';
+                        typeCode();
+                    }, 50);
+                }, 800);
+            }, 2000);
+        }
+
+        const code = `/**
+ * Verification of Achievement
+ * Original Document Image Detected... OK
+ * Executing digital certification sequence...
+ */
+
+const achievement = {
+    recipient: "笹川 太郎",
+    certification: "Class 2 Mechanic",
+    status: "AUTHENTICATED",
+    issued_at: "2026-04-01"
+};
+
+async function processAward() {
+    console.log("Analyzing image metadata...");
+    await new Promise(r => setTimeout(r, 600));
+    
+    console.log("Validating test results...");
+    if (achievement.status === "AUTHENTICATED") {
+        return {
+            action: "CELEBRATE",
+            message: "Congratulations on passing!"
+        };
+    }
+}
+
+// 🎉 STARTING CELEBRATION...
+processAward().then(res => launchUI(res));`;
+
+        let idx = 0;
+        function typeCode() {
+            const disp = document.getElementById('code-display');
+            if (idx < code.length) {
+                disp.innerText += code[idx];
+                idx++;
+                setTimeout(typeCode, 15);
+                const scroll = document.getElementById('code-scroll');
+                scroll.scrollTop = scroll.scrollHeight;
+            } else {
+                setTimeout(showFinal, 1000);
+            }
+        }
+
+        function showFinal() {
+            const editor = document.getElementById('editor-container');
+            const final = document.getElementById('final-screen');
+            
+            editor.style.opacity = '0';
+            editor.style.transform = 'scale(0.8)';
+            
+            setTimeout(() => {
+                editor.style.display = 'none';
+                final.style.display = 'flex';
+                setTimeout(() => {
+                    final.style.opacity = '1';
+                    startSparkles();
+                }, 100);
+            }, 500);
+        }
+
+        let sparkleActive = false;
+        let confettiParticles = [];
+
+        function launchConfetti() {
+            const colors = ['#d4af37', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#ff9ff3', '#54a0ff', '#ff9f43', '#10ac84'];
+            function createBurst(x, y, angle, spread, count) {
+                for (let i = 0; i < count; i++) {
+                    const a = (angle + (Math.random() - 0.5) * spread) * Math.PI / 180;
+                    const speed = Math.random() * 14 + 6;
+                    confettiParticles.push({
+                        x, y,
+                        vx: Math.cos(a) * speed,
+                        vy: Math.sin(a) * speed,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        w: Math.random() * 10 + 5,
+                        h: Math.random() * 5 + 2,
+                        rot: Math.random() * Math.PI * 2,
+                        rotV: (Math.random() - 0.5) * 0.25,
+                        alpha: 1
+                    });
+                }
+            }
+            // 左下クラッカー: 右斜め上へ
+            createBurst(30, canvas.height - 20, -75, 50, 80);
+            // 右下クラッカー: 左斜め上へ
+            createBurst(canvas.width - 30, canvas.height - 20, -105, 50, 80);
+        }
+
+        function startSparkles() {
+            sparkleActive = true;
+            confettiParticles = [];
+            launchConfetti();
+            let dots = [];
+            for(let i=0; i<100; i++) {
+                dots.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 2,
+                    s: Math.random() * 2 + 1,
+                    c: '#d4af37'
+                });
+            }
+            function draw() {
+                if (!sparkleActive) { ctx.clearRect(0,0,canvas.width, canvas.height); return; }
+                ctx.clearRect(0,0,canvas.width, canvas.height);
+                // 既存のキラキラ
+                dots.forEach(d => {
+                    d.y -= d.s;
+                    if(d.y < 0) d.y = canvas.height;
+                    ctx.fillStyle = d.c;
+                    ctx.beginPath();
+                    ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+                    ctx.fill();
+                });
+                // 紙吹雪
+                confettiParticles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.25;
+                    p.rot += p.rotV;
+                    p.alpha -= 0.0033; // 5秒でフェードアウト（60fps × 5s ≈ 300f）
+                    if (p.alpha <= 0) return;
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, p.alpha);
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                    ctx.restore();
+                });
+                confettiParticles = confettiParticles.filter(p => p.alpha > 0);
+                requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        function resetToStart() {
+            sparkleActive = false;
+            confettiParticles = [];
+
+            const final = document.getElementById('final-screen');
+            const award = document.getElementById('classic-award');
+            const editor = document.getElementById('editor-container');
+            const disp = document.getElementById('code-display');
+
+            // 最終画面をフェードアウト
+            final.style.opacity = '0';
+            setTimeout(() => {
+                final.style.display = 'none';
+
+                // エディタをリセット
+                disp.innerText = '';
+                idx = 0;
+                editor.style.opacity = '0';
+                editor.style.transform = 'scale(0.9)';
+                editor.style.display = 'none';
+
+                // 賞状を初期状態に戻して表示
+                award.style.display = '';
+                award.style.opacity = '1';
+                award.style.transform = '';
+                award.classList.remove('float-up');
+
+                // 少し間を置いて演出を再スタート
+                setTimeout(startFlow, 800);
+            }, 700);
+        }
+    </script>
+</body>
+</html>
