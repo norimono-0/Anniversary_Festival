@@ -79,6 +79,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            text-align: center;
             opacity: 0;
             transition: opacity 1s ease;
         }
@@ -90,6 +91,9 @@
             text-shadow: 0 0 30px rgba(212, 175, 55, 0.6);
             text-align: center;
             padding: 0 1rem;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0;
         }
 
         #back-btn {
@@ -264,9 +268,37 @@ processAward().then(res => launchUI(res));`;
         }
 
         let sparkleActive = false;
+        let confettiParticles = [];
+
+        function launchConfetti() {
+            const colors = ['#d4af37', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#ff9ff3', '#54a0ff', '#ff9f43', '#10ac84'];
+            function createBurst(x, y, angle, spread, count) {
+                for (let i = 0; i < count; i++) {
+                    const a = (angle + (Math.random() - 0.5) * spread) * Math.PI / 180;
+                    const speed = Math.random() * 14 + 6;
+                    confettiParticles.push({
+                        x, y,
+                        vx: Math.cos(a) * speed,
+                        vy: Math.sin(a) * speed,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        w: Math.random() * 10 + 5,
+                        h: Math.random() * 5 + 2,
+                        rot: Math.random() * Math.PI * 2,
+                        rotV: (Math.random() - 0.5) * 0.25,
+                        alpha: 1
+                    });
+                }
+            }
+            // 左下クラッカー: 右斜め上へ
+            createBurst(30, canvas.height - 20, -75, 50, 80);
+            // 右下クラッカー: 左斜め上へ
+            createBurst(canvas.width - 30, canvas.height - 20, -105, 50, 80);
+        }
 
         function startSparkles() {
             sparkleActive = true;
+            confettiParticles = [];
+            launchConfetti();
             let dots = [];
             for(let i=0; i<100; i++) {
                 dots.push({
@@ -280,6 +312,7 @@ processAward().then(res => launchUI(res));`;
             function draw() {
                 if (!sparkleActive) { ctx.clearRect(0,0,canvas.width, canvas.height); return; }
                 ctx.clearRect(0,0,canvas.width, canvas.height);
+                // 既存のキラキラ
                 dots.forEach(d => {
                     d.y -= d.s;
                     if(d.y < 0) d.y = canvas.height;
@@ -288,6 +321,23 @@ processAward().then(res => launchUI(res));`;
                     ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
                     ctx.fill();
                 });
+                // 紙吹雪
+                confettiParticles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.25;
+                    p.rot += p.rotV;
+                    p.alpha -= 0.0033; // 5秒でフェードアウト（60fps × 5s ≈ 300f）
+                    if (p.alpha <= 0) return;
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, p.alpha);
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                    ctx.restore();
+                });
+                confettiParticles = confettiParticles.filter(p => p.alpha > 0);
                 requestAnimationFrame(draw);
             }
             draw();
@@ -295,6 +345,7 @@ processAward().then(res => launchUI(res));`;
 
         function resetToStart() {
             sparkleActive = false;
+            confettiParticles = [];
 
             const final = document.getElementById('final-screen');
             const award = document.getElementById('classic-award');
